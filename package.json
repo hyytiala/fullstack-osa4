@@ -1,0 +1,30 @@
+{
+  "name": "fullstack-osa4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "watch": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyytiala/fullstack-osa4.git"
+  },
+  "author": "Otto Hyytiälä",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hyytiala/fullstack-osa4/issues"
+  },
+  "homepage": "https://github.com/hyytiala/fullstack-osa4#readme",
+  "dependencies": {
+    "cors": "^2.8.4",
+    "dotenv": "^5.0.0",
+    "express": "^4.16.2",
+    "mongoose": "^5.0.6"
+  },
+  "devDependencies": {
+    "nodemon": "^1.15.0"
+  }
+}

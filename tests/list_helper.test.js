@@ -66,8 +66,15 @@ describe('total likes', () => {
           }  
     ]
 
+    const emptyList = []
+
     test('likes is called', () => {
         const result = listHelper.totalLikes(listWithOneBlog)
         expect(result).toBe(36)
+    })
+
+    test('withEmptyList', () =>{
+        const result = listHelper.totalLikes(emptyList)
+        expect(result).toBe(0)
     })
 })

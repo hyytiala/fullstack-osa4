@@ -2,116 +2,59 @@ const supertest = require('supertest')
 const { app, server } = require('../index')
 const api = supertest(app)
 const Blog = require('../models/blog')
+const { format, initialBlogs, nonExistingId, blogsInDb } = require('./test_helper')
 
-const initialBlogs = [
-    {
-        title: "React patterns",
-        author: "Michael Chan",
-        url: "https://reactpatterns.com/",
-        likes: 7
-    },
-    {
-        title: "Go To Statement Considered Harmful ",
-        author: "Edsger W. Dijkstra",
-        url: "http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html",
-        likes: 5
-    }
-]
+describe('initial saved blogs', async () => {
+    beforeAll(async () => {
+        await Blog.remove({})
 
-beforeAll(async () => {
-    await Blog.remove({})
+        const blogObjects = initialBlogs.map(b => new Blog(b))
+        await Promise.all(blogObjects.map(b => b.save()))
+    })
 
-    const blogObjects = initialBlogs.map(blog => new Blog(blog))
-    const promiseArray = blogObjects.map(blog => blog.save())
-    await Promise.all(promiseArray)
-})
+    test('all blogs returned as JSON by GET', async () => {
+        const blogsInDatabase = await blogsInDb()
 
-test('all blogs are returned', async () => {
-    const response = await api
-        .get('/api/blogs')
+        const response = await api
+            .get('/api/blogs')
+            .expect(200)
+            .expect('Content-Type', /application\/json/)
 
-    expect(response.body.length).toBe(initialBlogs.length)
-})
+        expect(response.body.length).toBe(blogsInDatabase.length)
 
-test('blog can be added ', async () => {
-    const newBlog = {
-        title: "First class tests",
-        author: "Robert C. Martin",
-        url: "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
-        likes: 10,
-    }
+        const returnedtitles = response.body.map(b => b.title)
+        blogsInDatabase.forEach(blog => {
+            expect(returnedtitles).toContain(blog.title)
+        })
+    })
 
-    await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
+    describe('new blog', async () => {
 
-    const response = await api
-        .get('/api/blogs')
+        test('POST new blog', async () => {
+            const blogsBefore = await blogsInDb()
 
-    const contents = response.body.map(r => r.title)
+            const newBlog = {
+                title: 'New blog',
+                author: 'New Author',
+                url: 'www.new.fi',
+                likes: 1
+            }
 
-    expect(response.body.length).toBe(initialBlogs.length + 1)
-    expect(contents).toContain('First class tests')
-})
+            await api
+                .post('/api/blogs')
+                .send(newBlog)
+                .expect(201)
+                .expect('Content-Type', /application\/json/)
 
-test('blog without likes can be added ', async () => {
-    const newBlog = {
-        title: "No likes",
-        author: "No One Likes",
-        url: "http://blog.nolikes.com"
-    }
+            const blogsAfter = await blogsInDb()
 
-    await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
+            expect(blogsAfter.length).toBe(blogsBefore.length + 1)
 
-    const response = await api
-        .get('/api/blogs')
+            const titles = blogsAfter.map(b => b.title)
+            expect(titles).toContain('New blog')
+        })
+    })
 
-    const contents = response.body.map(r => r.likes)
-    expect(contents).toContain(0)
-})
-
-test('blog without url cannot be added ', async () => {
-    const newBlog = {
-        title: "no url",
-        author: "tester",
-        likes: 2
-    }
-
-    await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-    const response = await api
-        .get('/api/blogs')
-
-    expect(response.body.length).toBe(initialBlogs.length + 2)
-})
-
-test('blog without title cannot be added ', async () => {
-    const newBlog = {
-        author: "to title",
-        url: "www.url.fi",
-        likes: 2
-    }
-
-    await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-    const response = await api
-        .get('/api/blogs')
-
-    expect(response.body.length).toBe(initialBlogs.length + 2)
 })
 
 afterAll(() => {

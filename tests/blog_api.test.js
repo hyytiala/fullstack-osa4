@@ -5,7 +5,7 @@ const Blog = require('../models/blog')
 const User = require('../models/user')
 const { format, initialBlogs, nonExistingId, blogsInDb, usersInDb } = require('./test_helper')
 
-describe('initial saved blogs', async () => {
+describe.skip('initial saved blogs', async () => {
     beforeAll(async () => {
         await Blog.remove({})
 
@@ -33,12 +33,13 @@ describe('initial saved blogs', async () => {
 
         test('POST new blog', async () => {
             const blogsBefore = await blogsInDb()
-
+            const users = await usersInDb()
             const newBlog = {
                 title: 'New blog',
                 author: 'New Author',
                 url: 'www.new.fi',
-                likes: 1
+                likes: 1,
+                userId: `${users[1].id}`
             }
 
             await api
@@ -53,6 +54,70 @@ describe('initial saved blogs', async () => {
 
             const titles = blogsAfter.map(b => b.title)
             expect(titles).toContain('New blog')
+        })
+
+        test('POST new blog with no likes', async () => {
+            const blogsBefore = await blogsInDb()
+            const users = await usersInDb()
+            const newBlog = {
+                title: 'New blog',
+                author: 'New Author',
+                url: 'www.new.fi',
+                userId: `${users[1].id}`
+            }
+
+            await api
+                .post('/api/blogs')
+                .send(newBlog)
+                .expect(201)
+                .expect('Content-Type', /application\/json/)
+
+            const blogsAfter = await blogsInDb()
+
+            expect(blogsAfter.length).toBe(blogsBefore.length + 1)
+
+            const likes = blogsAfter.map(b => b.likes)
+            expect(likes).toContain(0)
+        })
+
+        test('POST new blog with no title', async () => {
+            const blogsBefore = await blogsInDb()
+            const users = await usersInDb()
+            const newBlog = {
+                author: 'New Author',
+                url: 'www.new.fi',
+                likes: 2,
+                userId: `${users[1].id}`
+            }
+
+            await api
+                .post('/api/blogs')
+                .send(newBlog)
+                .expect(400)
+
+            const blogsAfter = await blogsInDb()
+
+            expect(blogsAfter.length).toBe(blogsBefore.length)
+        })
+
+        test('POST new blog with no url', async () => {
+            const blogsBefore = await blogsInDb()
+            const users = await usersInDb()
+            const newBlog = {
+                author: 'New Author',
+                title: 'New blog',
+                likes: 2,
+                userId: `${users[1].id}`
+            }
+
+            await api
+                .post('/api/blogs')
+                .send(newBlog)
+                .expect(400)
+
+            const blogsAfter = await blogsInDb()
+
+            expect(blogsAfter.length).toBe(blogsBefore.length)
         })
     })
 

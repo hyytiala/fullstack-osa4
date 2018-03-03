@@ -57,10 +57,14 @@ blogsRouter.delete('/:id', async (request, response) => {
   try {
     const decodedToken = jwt.verify(request.token, process.env.SECRET)
     const blog = await Blog.findById(request.params.id)
-    if (blog.user.toString() === decodedToken.id.toString()) {
+    if (blog.user == null) {
       await Blog.findByIdAndRemove(request.params.id)
       response.status(204).end()
     }
+    if (blog.user.toString() === decodedToken.id.toString()) {
+      await Blog.findByIdAndRemove(request.params.id)
+      response.status(204).end()
+    } 
   } catch (exception) {
     if (exception.name === 'JsonWebTokenError') {
       response.status(401).json({ error: exception.message })
@@ -72,19 +76,10 @@ blogsRouter.delete('/:id', async (request, response) => {
 })
 
 blogsRouter.put('/:id', async (request, response) => {
-  try {
-    const body = request.body
+  const { likes } = request.body
+  const blog = await Blog.findByIdAndUpdate(request.params.id, { likes }, { new: true }).populate('user', { _id: 1, username: 1, name: 1 })
 
-    const blog = {
-      likes: body.likes
-    }
-
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
-    response.json(Blog.format(blog))
-  } catch (error) {
-    console.log(error)
-    response.status(400).send({ error: 'malformatted id' })
-  }
+  response.json(Blog.format(blog))
 })
 
 module.exports = blogsRouter

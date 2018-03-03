@@ -24,6 +24,7 @@ mongoose.Promise = global.Promise
 app.use(cors())
 app.use(bodyParser.json())
 app.use(express.static('build'))
+app.use(middleware.logger)
 app.use(middleware.token)
 
 app.use('/api/blogs', blogsRouter)
